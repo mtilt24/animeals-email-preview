@@ -108,7 +108,7 @@
     box-shadow:0 10px 40px rgba(31,58,95,.14); overflow:hidden; align-self:flex-start;
   }
   .frame-shell.mobile{max-width:380px}
-  iframe{width:100%; height:1400px; border:0; display:block; background:#eef1f4}
+  iframe{width:100%; border:0; display:block; background:#eef1f4}
 
   /* ---------- Feedback dock ---------- */
   .feedback{
@@ -199,11 +199,12 @@
       </div>
       <textarea id="notes" placeholder="Notes for this email — copy edits, image swaps, subject line ideas, anything…"></textarea>
       <div class="saved-note" id="savedNote"></div>
-      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
-        <button class="btn primary" onclick="sendFeedback()">✉ Send all feedback</button>
-        <button class="btn" onclick="copyFeedback()">Copy feedback to clipboard</button>
+      <div id="fbActions" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+        <button class="btn primary" id="submitBtn" onclick="submitFeedback()">Send feedback to Michelle</button>
+        <button class="btn" onclick="copyFeedback()">Copy instead</button>
         <button class="btn" onclick="clearFeedback()">Clear my notes</button>
       </div>
+      <div id="fbResult" style="margin-top:12px; font-size:13.5px; display:none"></div>
     </div>
   </main>
 </div>
@@ -277,10 +278,13 @@ function renderProgress(){
 }
 
 /* ---------- Select / preview ---------- */
+var frameEl = document.getElementById("frame");
+frameEl.addEventListener("load", sizeFrame);
+
 function selectEmail(i){
   current = i;
   var e = EMAILS[i];
-  document.getElementById("frame").src = e.file;
+  frameEl.src = e.file;
   document.getElementById("openRaw").href = e.file;
   document.getElementById("frameTitle").childNodes[0].nodeValue = e.subject;
   document.getElementById("frameStage").textContent = e.stage;
@@ -292,11 +296,43 @@ function selectEmail(i){
   renderList();
 }
 
+/* Measure the real content height of the email so there's no dead space or cut-off */
+function sizeFrame(){
+  try{
+    var doc = frameEl.contentDocument || frameEl.contentWindow.document;
+    frameEl._h = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight) + 16;
+  }catch(e){ frameEl._h = 1500; }
+  applyView();
+}
+
+/* Desktop = true width. Mobile = render at 600px then scale to fit a phone, exactly
+   like a real phone shrinks a fixed-width email that has no media queries. */
+function applyView(){
+  var shell = document.getElementById("shell");
+  var h = frameEl._h || 1500;
+  if(view==="mobile"){
+    var logical = 600, disp = 390, s = disp/logical;
+    frameEl.style.width = logical+"px";
+    frameEl.style.height = h+"px";
+    frameEl.style.transformOrigin = "top left";
+    frameEl.style.transform = "scale("+s+")";
+    shell.style.width = disp+"px";
+    shell.style.height = Math.ceil(h*s)+"px";
+  } else {
+    frameEl.style.width = "100%";
+    frameEl.style.transform = "none";
+    frameEl.style.height = h+"px";
+    shell.style.width = "";
+    shell.style.height = "";
+  }
+}
+
 function setView(v){
   view=v;
   document.getElementById("shell").classList.toggle("mobile", v==="mobile");
   document.getElementById("segDesktop").classList.toggle("on", v==="desktop");
   document.getElementById("segMobile").classList.toggle("on", v==="mobile");
+  applyView();
 }
 
 /* ---------- Feedback handlers ---------- */
@@ -342,11 +378,47 @@ function compile(){
   return lines.join("\n");
 }
 
-function sendFeedback(){
+function submitFeedback(){
   var who = (document.getElementById("who").value || "").trim();
-  var subj = "AniMeals email feedback" + (who ? " — "+who : "");
-  var body = compile();
-  window.location.href = "mailto:"+FEEDBACK_TO+"?subject="+encodeURIComponent(subj)+"&body="+encodeURIComponent(body);
+  var btn = document.getElementById("submitBtn");
+  var result = document.getElementById("fbResult");
+  btn.disabled = true; btn.textContent = "Sending…";
+  result.style.display = "none";
+
+  fetch("https://formsubmit.co/ajax/" + FEEDBACK_TO, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify({
+      _subject: "AniMeals email feedback" + (who ? " — " + who : ""),
+      Reviewer: who || "(name not given)",
+      Feedback: compile(),
+      _template: "table",
+      _captcha: "false"
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(d && (d.success === true || d.success === "true")){
+      showResult(true, "✓ Sent to Michelle. Thank you — you can keep editing and send again any time.");
+    } else {
+      showResult(false, "Couldn’t send automatically. Use “Copy instead” and paste it into an email to Michelle.");
+    }
+  })
+  .catch(function(){
+    showResult(false, "Couldn’t send automatically. Use “Copy instead” and paste it into an email to Michelle.");
+  })
+  .then(function(){ btn.disabled = false; btn.textContent = "Send feedback to Michelle"; });
+}
+
+function showResult(ok, msg){
+  var r = document.getElementById("fbResult");
+  r.style.display = "block";
+  r.style.color = ok ? "#3f6b13" : "#a8412a";
+  r.style.background = ok ? "#f3f9ea" : "#fdf1ec";
+  r.style.border = "1px solid " + (ok ? "#cfe6ad" : "#f3cdc2");
+  r.style.borderRadius = "10px";
+  r.style.padding = "11px 13px";
+  r.textContent = msg;
 }
 
 function copyFeedback(){
