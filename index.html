@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AniMeals Email Campaign — Client Review</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{
+    --navy:#1f3a5f; --navy-2:#16294310; --green:#8bc53f; --green-deep:#264b1f;
+    --bg:#eef1f4; --panel:#ffffff; --ink:#2b2b2b; --muted:#5a6b7b;
+    --line:#e2e8ee; --terracotta:#c66a4e; --shadow:0 1px 3px rgba(31,58,95,.08),0 8px 24px rgba(31,58,95,.06);
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,Helvetica,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--navy)}
+
+  /* ---------- Top bar ---------- */
+  header.bar{
+    background:var(--navy); color:#fff; padding:16px 24px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    position:sticky; top:0; z-index:30;
+  }
+  .brand{display:flex; align-items:center; gap:14px; min-width:0}
+  .brand .kicker{font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9fb1c6; margin:0 0 2px}
+  .brand h1{font-size:17px; margin:0; font-weight:700; line-height:1.2}
+  .brand .sub{font-size:13px; color:#cdd8e6; margin-top:2px}
+  .reviewer{display:flex; align-items:center; gap:8px; font-size:13px}
+  .reviewer label{color:#cdd8e6}
+  .reviewer input{
+    background:#16294a; border:1px solid #335577; color:#fff;
+    border-radius:8px; padding:7px 10px; font-size:13px; min-width:150px;
+  }
+  .reviewer input::placeholder{color:#7e93ad}
+
+  /* ---------- Layout ---------- */
+  .wrap{display:grid; grid-template-columns:340px 1fr; min-height:calc(100vh - 65px)}
+  @media (max-width:900px){ .wrap{grid-template-columns:1fr} }
+
+  /* ---------- Sidebar list ---------- */
+  aside{
+    background:var(--panel); border-right:1px solid var(--line); padding:18px;
+    overflow-y:auto;
+  }
+  .intro{
+    background:linear-gradient(180deg,#f5f8f0,#ffffff); border:1px solid var(--line);
+    border-radius:var(--radius); padding:16px 16px 14px; margin-bottom:18px;
+  }
+  .intro h2{margin:0 0 6px; font-size:15px; color:var(--navy)}
+  .intro p{margin:0; font-size:13px; color:var(--muted)}
+  .progress{margin-top:12px; font-size:12px; color:var(--muted)}
+  .progress b{color:var(--navy)}
+
+  .list{display:flex; flex-direction:column; gap:10px}
+  .card{
+    border:1px solid var(--line); border-radius:var(--radius); padding:13px 14px; cursor:pointer;
+    background:#fff; transition:border-color .15s, box-shadow .15s, transform .05s; position:relative;
+  }
+  .card:hover{border-color:var(--green); box-shadow:var(--shadow)}
+  .card.active{border-color:var(--navy); box-shadow:0 0 0 2px var(--navy) inset}
+  .card .seq{
+    display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px;
+    border-radius:50%; background:var(--green); color:var(--green-deep); font-weight:700; font-size:12px;
+    margin-right:8px; flex:0 0 auto;
+  }
+  .card .row1{display:flex; align-items:center; margin-bottom:6px}
+  .card .stage{font-size:11px; letter-spacing:.6px; text-transform:uppercase; color:var(--muted); font-weight:600}
+  .card .subject{font-size:14px; font-weight:600; color:var(--ink); margin:0 0 3px}
+  .card .preview{font-size:12.5px; color:var(--muted); margin:0;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+  .pill{
+    position:absolute; top:12px; right:12px; font-size:10.5px; font-weight:700; letter-spacing:.4px;
+    padding:3px 8px; border-radius:20px; text-transform:uppercase;
+  }
+  .pill.approved{background:#e7f4d8; color:#3f6b13}
+  .pill.changes{background:#fbe6df; color:#a8412a}
+  .pill.none{display:none}
+
+  /* ---------- Main preview ---------- */
+  main{display:flex; flex-direction:column; min-width:0}
+  .toolbar{
+    display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--line);
+    background:#fff; flex-wrap:wrap;
+  }
+  .toolbar .title{font-size:14px; font-weight:700; color:var(--navy); margin-right:auto}
+  .toolbar .title small{display:block; font-weight:500; color:var(--muted); font-size:12px}
+  .seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+  .seg button{
+    border:0; background:#fff; padding:7px 13px; font-size:13px; cursor:pointer; color:var(--muted); font-weight:600;
+  }
+  .seg button.on{background:var(--navy); color:#fff}
+  .btn{
+    border:1px solid var(--line); background:#fff; color:var(--navy); font-weight:600; font-size:13px;
+    padding:7px 13px; border-radius:8px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn:hover{border-color:var(--navy)}
+  .btn.primary{background:var(--navy); color:#fff; border-color:var(--navy)}
+  .btn.primary:hover{background:#16294a}
+
+  .stage-area{flex:1; overflow:auto; padding:24px; background:#dfe5ec; display:flex; justify-content:center}
+  .frame-shell{
+    width:100%; max-width:680px; transition:max-width .2s; background:#fff; border-radius:10px;
+    box-shadow:0 10px 40px rgba(31,58,95,.14); overflow:hidden; align-self:flex-start;
+  }
+  .frame-shell.mobile{max-width:380px}
+  iframe{width:100%; height:1400px; border:0; display:block; background:#eef1f4}
+
+  /* ---------- Feedback dock ---------- */
+  .feedback{
+    border-top:1px solid var(--line); background:#fff; padding:16px 20px;
+  }
+  .feedback h3{margin:0 0 4px; font-size:14px; color:var(--navy)}
+  .feedback .hint{font-size:12px; color:var(--muted); margin:0 0 12px}
+  .status-row{display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap}
+  .status-btn{
+    border:1.5px solid var(--line); background:#fff; padding:8px 14px; border-radius:8px; cursor:pointer;
+    font-size:13px; font-weight:600; color:var(--muted); display:inline-flex; align-items:center; gap:7px;
+  }
+  .status-btn .dot{width:9px; height:9px; border-radius:50%; background:#cbd5e0}
+  .status-btn.approved.on{border-color:#6fae2c; color:#3f6b13; background:#f3f9ea}
+  .status-btn.approved.on .dot{background:#6fae2c}
+  .status-btn.changes.on{border-color:var(--terracotta); color:#a8412a; background:#fdf1ec}
+  .status-btn.changes.on .dot{background:var(--terracotta)}
+  textarea{
+    width:100%; min-height:90px; border:1px solid var(--line); border-radius:10px; padding:11px 13px;
+    font:inherit; font-size:13.5px; resize:vertical; color:var(--ink);
+  }
+  textarea:focus{outline:0; border-color:var(--navy)}
+  .saved-note{font-size:12px; color:#3f6b13; margin-top:6px; height:16px}
+
+  footer.foot{
+    background:var(--navy); color:#9fb1c6; text-align:center; font-size:12px; padding:14px;
+  }
+  footer.foot a{color:#cdd8e6}
+
+  /* toast */
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--navy); color:#fff; padding:12px 20px; border-radius:10px; font-size:13.5px;
+    box-shadow:var(--shadow); opacity:0; pointer-events:none; transition:.25s; z-index:50;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand">
+    <img src="https://files.constantcontact.com/f65fd31f301/48e5fea0-f77e-4dea-a153-57c4dcaacdb2.png" alt="AniMeals" height="40" style="height:40px;width:auto;background:#fff;border-radius:6px;padding:4px">
+    <div>
+      <p class="kicker">Seniors First &middot; Client Review</p>
+      <h1>Two Meals, One Home — AniMeals Email Campaign</h1>
+      <div class="sub">6-email donor series &middot; preview before Constant Contact send</div>
+    </div>
+  </div>
+  <div class="reviewer">
+    <label for="who">Reviewing as</label>
+    <input id="who" type="text" placeholder="Your name" autocomplete="name">
+  </div>
+</header>
+
+<div class="wrap">
+  <aside>
+    <div class="intro">
+      <h2>How to review</h2>
+      <p>Click any email to preview it. Toggle desktop / mobile at the top. Mark each one <b>Looks good</b> or <b>Needs changes</b> and leave notes below it. When you're done, hit <b>Send feedback</b> and it compiles everything into one message.</p>
+      <div class="progress" id="progress"></div>
+    </div>
+    <div class="list" id="list"></div>
+  </aside>
+
+  <main>
+    <div class="toolbar">
+      <div class="title" id="frameTitle">—<small id="frameStage"></small></div>
+      <div class="seg" role="group" aria-label="Preview width">
+        <button id="segDesktop" class="on" onclick="setView('desktop')">Desktop</button>
+        <button id="segMobile" onclick="setView('mobile')">Mobile</button>
+      </div>
+      <a class="btn" id="openRaw" href="#" target="_blank" rel="noopener">Open full screen ↗</a>
+    </div>
+
+    <div class="stage-area">
+      <div class="frame-shell" id="shell">
+        <iframe id="frame" title="Email preview" src="emails/Email_1_Launch_Betty_and_Andy.html"></iframe>
+      </div>
+    </div>
+
+    <div class="feedback">
+      <h3 id="fbTitle">Feedback</h3>
+      <p class="hint">Saved automatically in your browser as you type.</p>
+      <div class="status-row">
+        <button class="status-btn approved" id="stApproved" onclick="setStatus('approved')"><span class="dot"></span>Looks good</button>
+        <button class="status-btn changes" id="stChanges" onclick="setStatus('changes')"><span class="dot"></span>Needs changes</button>
+      </div>
+      <textarea id="notes" placeholder="Notes for this email — copy edits, image swaps, subject line ideas, anything…"></textarea>
+      <div class="saved-note" id="savedNote"></div>
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
+        <button class="btn primary" onclick="sendFeedback()">✉ Send all feedback</button>
+        <button class="btn" onclick="copyFeedback()">Copy feedback to clipboard</button>
+        <button class="btn" onclick="clearFeedback()">Clear my notes</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer class="foot">
+  Prepared by Raeve Marketing for Seniors First &middot; AniMeals “Two Meals, One Home” &middot; This page is a private preview, not the final send.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- Campaign data ---------- */
+var FEEDBACK_TO = "mtilton.maverick@gmail.com";
+var STORE = "animeals_review_v1";
+
+var EMAILS = [
+  { file:"emails/Email_1_Launch_Betty_and_Andy.html", stage:"Email 1 · Launch",
+    subject:"Betty has a quiet rule: Andy eats first",
+    preview:"Meet Betty and Andy, and the program that means she never has to choose." },
+  { file:"emails/Email_2_How_It_Works_Joyce.html", stage:"Email 2 · How it works",
+    subject:"One stop at the door feeds Joyce’s whole household",
+    preview:"How AniMeals keeps Joyce’s whole household fed and together." },
+  { file:"emails/Email_3_Impact_Shirley.html", stage:"Email 3 · Impact & numbers",
+    subject:"The poodle who got Shirley through it",
+    preview:"The poodle who got Shirley through it, and the numbers behind a program worth saving." },
+  { file:"emails/Email_4_Why_It_Matters_Janise.html", stage:"Email 4 · Why it matters",
+    subject:"For a senior alone, a pet is so much more than a pet",
+    preview:"Why a pet is so much more than a pet for a senior who lives alone." },
+  { file:"emails/Email_5_Final_Push.html", stage:"Email 5 · Final push",
+    subject:"We close July 15. Here’s where we stand.",
+    preview:"We close July 15. Here’s where we stand." },
+  { file:"emails/Email_6_Thank_You_Stephanie.html", stage:"Email 6 · Thank you",
+    subject:"Because of you, AniMeals is safe",
+    preview:"What your gift means for Placer County seniors and their pets." }
+];
+
+/* ---------- State ---------- */
+var state = load();
+var current = 0;
+var view = "desktop";
+
+function load(){ try{ return JSON.parse(localStorage.getItem(STORE)) || {who:"",items:{}}; }catch(e){ return {who:"",items:{}}; } }
+function save(){ localStorage.setItem(STORE, JSON.stringify(state)); }
+function item(i){ if(!state.items[i]) state.items[i]={status:"",notes:""}; return state.items[i]; }
+
+/* ---------- Render list ---------- */
+function renderList(){
+  var L = document.getElementById("list"); L.innerHTML="";
+  EMAILS.forEach(function(e,i){
+    var it = item(i);
+    var card = document.createElement("div");
+    card.className = "card" + (i===current ? " active":"");
+    card.onclick = function(){ selectEmail(i); };
+    var pillClass = it.status==="approved" ? "approved" : it.status==="changes" ? "changes" : "none";
+    var pillText  = it.status==="approved" ? "Looks good" : it.status==="changes" ? "Changes" : "";
+    card.innerHTML =
+      '<span class="pill '+pillClass+'">'+pillText+'</span>'+
+      '<div class="row1"><span class="seq">'+(i+1)+'</span><span class="stage">'+e.stage+'</span></div>'+
+      '<p class="subject">'+e.subject+'</p>'+
+      '<p class="preview">'+e.preview+'</p>';
+    L.appendChild(card);
+  });
+  renderProgress();
+}
+
+function renderProgress(){
+  var done=0, changes=0;
+  EMAILS.forEach(function(e,i){ var s=item(i).status; if(s==="approved")done++; if(s==="changes")changes++; });
+  document.getElementById("progress").innerHTML =
+    '<b>'+done+'</b> approved &nbsp;·&nbsp; <b>'+changes+'</b> need changes &nbsp;·&nbsp; <b>'+(EMAILS.length-done-changes)+'</b> not reviewed';
+}
+
+/* ---------- Select / preview ---------- */
+function selectEmail(i){
+  current = i;
+  var e = EMAILS[i];
+  document.getElementById("frame").src = e.file;
+  document.getElementById("openRaw").href = e.file;
+  document.getElementById("frameTitle").childNodes[0].nodeValue = e.subject;
+  document.getElementById("frameStage").textContent = e.stage;
+  document.getElementById("fbTitle").textContent = "Feedback — " + e.stage;
+  var it = item(i);
+  document.getElementById("notes").value = it.notes || "";
+  setStatusUI(it.status);
+  document.getElementById("savedNote").textContent = "";
+  renderList();
+}
+
+function setView(v){
+  view=v;
+  document.getElementById("shell").classList.toggle("mobile", v==="mobile");
+  document.getElementById("segDesktop").classList.toggle("on", v==="desktop");
+  document.getElementById("segMobile").classList.toggle("on", v==="mobile");
+}
+
+/* ---------- Feedback handlers ---------- */
+function setStatus(s){
+  var it = item(current);
+  it.status = (it.status===s) ? "" : s;
+  save(); setStatusUI(it.status); renderList();
+  flashSaved();
+}
+function setStatusUI(s){
+  document.getElementById("stApproved").classList.toggle("on", s==="approved");
+  document.getElementById("stChanges").classList.toggle("on", s==="changes");
+}
+var saveTimer;
+document.getElementById("notes").addEventListener("input", function(){
+  item(current).notes = this.value; save();
+  clearTimeout(saveTimer); saveTimer=setTimeout(flashSaved,300);
+});
+document.getElementById("who").addEventListener("input", function(){ state.who=this.value; save(); });
+function flashSaved(){
+  var n=document.getElementById("savedNote"); n.textContent="✓ Saved";
+  clearTimeout(n._t); n._t=setTimeout(function(){ n.textContent=""; }, 1400);
+}
+
+/* ---------- Compile / send ---------- */
+function compile(){
+  var who = (document.getElementById("who").value || state.who || "").trim();
+  var lines = [];
+  lines.push("AniMeals — \"Two Meals, One Home\" email campaign feedback");
+  if(who) lines.push("Reviewer: " + who);
+  lines.push("");
+  EMAILS.forEach(function(e,i){
+    var it = item(i);
+    var status = it.status==="approved" ? "APPROVED — looks good"
+               : it.status==="changes" ? "NEEDS CHANGES"
+               : "Not yet reviewed";
+    lines.push((i+1)+". "+e.stage);
+    lines.push("   Subject: "+e.subject);
+    lines.push("   Status: "+status);
+    if(it.notes && it.notes.trim()) lines.push("   Notes: "+it.notes.trim().replace(/\n/g,"\n          "));
+    lines.push("");
+  });
+  return lines.join("\n");
+}
+
+function sendFeedback(){
+  var who = (document.getElementById("who").value || "").trim();
+  var subj = "AniMeals email feedback" + (who ? " — "+who : "");
+  var body = compile();
+  window.location.href = "mailto:"+FEEDBACK_TO+"?subject="+encodeURIComponent(subj)+"&body="+encodeURIComponent(body);
+}
+
+function copyFeedback(){
+  var text = compile();
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ toast("Feedback copied — paste it into an email or text"); },
+      function(){ fallbackCopy(text); });
+  } else { fallbackCopy(text); }
+}
+function fallbackCopy(text){
+  var t=document.createElement("textarea"); t.value=text; document.body.appendChild(t); t.select();
+  try{ document.execCommand("copy"); toast("Feedback copied"); }catch(e){ toast("Press ⌘C to copy"); }
+  document.body.removeChild(t);
+}
+
+function clearFeedback(){
+  if(!confirm("Clear all your notes and statuses on this device?")) return;
+  state = {who:document.getElementById("who").value, items:{}}; save();
+  selectEmail(current); toast("Cleared");
+}
+
+function toast(msg){
+  var el=document.getElementById("toast"); el.textContent=msg; el.classList.add("show");
+  clearTimeout(el._t); el._t=setTimeout(function(){ el.classList.remove("show"); }, 2600);
+}
+
+/* ---------- Init ---------- */
+document.getElementById("who").value = state.who || "";
+renderList();
+selectEmail(0);
+</script>
+</body>
+</html>
