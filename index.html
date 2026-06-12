@@ -284,7 +284,7 @@ frameEl.addEventListener("load", sizeFrame);
 function selectEmail(i){
   current = i;
   var e = EMAILS[i];
-  frameEl.src = e.file;
+  frameEl.src = e.file + "?v=" + Date.now();
   document.getElementById("openRaw").href = e.file;
   document.getElementById("frameTitle").childNodes[0].nodeValue = e.subject;
   document.getElementById("frameStage").textContent = e.stage;
